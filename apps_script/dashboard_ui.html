@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Stock BI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f5f0; --card: #ffffff; --ink: #2b2620; --muted: #8a8177;
+    --kraft: #b08d57; --rojo: #c0392b; --amarillo: #d4a017; --verde: #3d7a4e;
+    --gris: #9aa0a6; --borde: #e8e2d8;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--ink); padding: 24px; max-width: 1200px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 22px; letter-spacing: .3px; }
+  h1 span { color: var(--kraft); }
+  #actualizado { color: var(--muted); font-size: 13px; }
+  h2 { font-size: 15px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin: 28px 0 12px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .kpi { background: var(--card); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; border-top: 4px solid var(--gris); }
+  .kpi .n { font-size: 32px; font-weight: 700; }
+  .kpi .l { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .kpi.rojo { border-top-color: var(--rojo); }     .kpi.rojo .n { color: var(--rojo); }
+  .kpi.amarillo { border-top-color: var(--amarillo); } .kpi.amarillo .n { color: var(--amarillo); }
+  .kpi.verde { border-top-color: var(--verde); }   .kpi.verde .n { color: var(--verde); }
+  .kpi.azul { border-top-color: #3d6ea5; }         .kpi.azul .n { color: #3d6ea5; }
+
+  .card { background: var(--card); border: 1px solid var(--borde); border-radius: 12px; padding: 18px; }
+  .fila-graficos { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+  @media (max-width: 900px) { .fila-graficos { grid-template-columns: 1fr; } }
+
+  .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filtros button { border: 1px solid var(--borde); background: var(--card); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--ink); }
+  .filtros button.activo { background: var(--ink); color: #fff; border-color: var(--ink); }
+  input[type="search"] { border: 1px solid var(--borde); border-radius: 20px; padding: 6px 14px; font-size: 13px; width: 220px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 2px solid var(--borde); position: sticky; top: 0; background: var(--card); cursor: pointer; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--borde); }
+  tr.rojo td:first-child { box-shadow: inset 3px 0 0 var(--rojo); }
+  tr.amarillo td:first-child { box-shadow: inset 3px 0 0 var(--amarillo); }
+  tr.verde td:first-child { box-shadow: inset 3px 0 0 var(--verde); }
+  tr.azul td:first-child { box-shadow: inset 3px 0 0 #3d6ea5; }
+  .tabla-wrap { max-height: 480px; overflow-y: auto; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  #cargando { text-align: center; padding: 80px 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stock BI — <span><?= marca ?></span></h1>
+  <div id="actualizado"></div>
+</header>
+
+<div id="cargando">Cargando datos…</div>
+
+<div id="app" style="display:none">
+  <div class="kpis">
+    <div class="kpi rojo"><div class="n" id="k-rojos"></div><div class="l">SKUs en rojo (pedir ya)</div></div>
+    <div class="kpi amarillo"><div class="n" id="k-amarillos"></div><div class="l">SKUs en amarillo</div></div>
+    <div class="kpi azul"><div class="n" id="k-encamino"></div><div class="l">Salvados por contenedor</div></div>
+    <div class="kpi verde"><div class="n" id="k-verdes"></div><div class="l">SKUs en verde</div></div>
+    <div class="kpi"><div class="n" id="k-sinrot"></div><div class="l">Sin rotación</div></div>
+    <div class="kpi"><div class="n" id="k-total"></div><div class="l">SKUs activos</div></div>
+  </div>
+
+  <h2>Ventas mensuales (SKUs vigentes)</h2>
+  <div class="fila-graficos">
+    <div class="card"><canvas id="chart-tendencia" height="110"></canvas></div>
+    <div class="card"><canvas id="chart-top" height="110"></canvas></div>
+  </div>
+
+  <h2>Semáforo de reposición</h2>
+  <div class="card">
+    <div class="filtros">
+      <button data-f="todos" class="activo">Todos</button>
+      <button data-f="🔴">🔴 Rojos</button>
+      <button data-f="🟡">🟡 Amarillos</button>
+      <button data-f="🔵">🔵 En camino</button>
+      <button data-f="🟢">🟢 Verdes</button>
+      <button data-f="⚫">⚫ Sin rotación</button>
+      <input type="search" id="buscar" placeholder="Buscar SKU o descripción…">
+    </div>
+    <div class="tabla-wrap">
+      <table id="tabla">
+        <thead><tr>
+          <th data-k="sku">SKU</th><th data-k="desc">Descripción</th>
+          <th data-k="stock" class="num">Stock</th><th data-k="vel" class="num">Vel/día</th>
+          <th data-k="cobertura" class="num">Cobertura</th>
+          <th data-k="enCamino" class="num">En camino</th>
+          <th data-k="cobTransito" class="num">Cob. c/tránsito</th>
+          <th data-k="idx90" class="num">Temporada 90d</th>
+          <th data-k="origen">Origen</th><th data-k="lead" class="num">Lead</th><th data-k="estado">Estado</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var DATA = null, filtro = 'todos', busqueda = '', ordenK = 'cobertura', ordenAsc = true;
+var fmt = new Intl.NumberFormat('es-CL');
+var fmtClp = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
+google.script.run.withSuccessHandler(init).withFailureHandler(function(e) {
+  document.getElementById('cargando').textContent = 'Error cargando datos: ' + e.message;
+}).getDatosDashboard();
+
+function init(d) {
+  DATA = d;
+  document.getElementById('cargando').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('actualizado').textContent = 'Actualizado: ' + d.actualizado;
+
+  ['rojos', 'amarillos', 'verdes'].forEach(function(k) {
+    document.getElementById('k-' + k.slice(0, k === 'amarillos' ? 9 : (k === 'verdes' ? 6 : 5))).textContent = fmt.format(d.kpis[k]);
+  });
+  document.getElementById('k-rojos').textContent = fmt.format(d.kpis.rojos);
+  document.getElementById('k-amarillos').textContent = fmt.format(d.kpis.amarillos);
+  document.getElementById('k-encamino').textContent = fmt.format(d.kpis.enCamino || 0);
+  document.getElementById('k-verdes').textContent = fmt.format(d.kpis.verdes);
+  document.getElementById('k-sinrot').textContent = fmt.format(d.kpis.sinRotacion);
+  document.getElementById('k-total').textContent = fmt.format(d.kpis.total);
+
+  graficoTendencia(d.tendencia);
+  graficoTop(d.top, d.ventanaTop);
+  renderTabla();
+
+  document.querySelectorAll('.filtros button').forEach(function(b) {
+    b.onclick = function() {
+      document.querySelector('.filtros .activo').classList.remove('activo');
+      b.classList.add('activo'); filtro = b.dataset.f; renderTabla();
+    };
+  });
+  document.getElementById('buscar').oninput = function(e) { busqueda = e.target.value.toLowerCase(); renderTabla(); };
+  document.querySelectorAll('th').forEach(function(th) {
+    th.onclick = function() {
+      var k = th.dataset.k;
+      if (ordenK === k) ordenAsc = !ordenAsc; else { ordenK = k; ordenAsc = true; }
+      renderTabla();
+    };
+  });
+}
+
+function renderTabla() {
+  var filas = DATA.semaforo.filter(function(r) {
+    if (filtro !== 'todos' && r.estado.indexOf(filtro) !== 0) return false;
+    if (busqueda && (r.sku + ' ' + r.desc).toLowerCase().indexOf(busqueda) === -1) return false;
+    return true;
+  }).sort(function(a, b) {
+    var va = a[ordenK], vb = b[ordenK];
+    if (va == null) return 1; if (vb == null) return -1;
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = String(vb).toLowerCase(); }
+    return (va < vb ? -1 : va > vb ? 1 : 0) * (ordenAsc ? 1 : -1);
+  });
+  var html = filas.map(function(r) {
+    var clase = r.estado.indexOf('🔴') === 0 ? 'rojo' : r.estado.indexOf('🟡') === 0 ? 'amarillo' : r.estado.indexOf('🔵') === 0 ? 'azul' : r.estado.indexOf('🟢') === 0 ? 'verde' : '';
+    var enCamino = r.enCamino ? fmt.format(r.enCamino) + (r.eta != null ? ' <span style="color:var(--muted)">(' + r.eta + 'd)</span>' : '') : '—';
+    var temporada = r.idx90 == null ? '—'
+      : (r.idx90 >= 1.25 ? '📈 ' : r.idx90 <= 0.75 ? '📉 ' : '') + r.idx90.toFixed(2);
+    return '<tr class="' + clase + '"><td>' + r.sku + '</td><td>' + r.desc + '</td>'
+      + '<td class="num">' + fmt.format(r.stock) + '</td><td class="num">' + r.vel.toFixed(1) + '</td>'
+      + '<td class="num">' + (r.cobertura == null ? '—' : fmt.format(r.cobertura)) + '</td>'
+      + '<td class="num">' + enCamino + '</td>'
+      + '<td class="num">' + (r.cobTransito == null ? '—' : fmt.format(r.cobTransito)) + '</td>'
+      + '<td class="num">' + temporada + '</td>'
+      + '<td>' + r.origen + '</td><td class="num">' + (r.lead || '—') + '</td><td>' + r.estado + '</td></tr>';
+  }).join('');
+  document.querySelector('#tabla tbody').innerHTML = html || '<tr><td colspan="11" style="text-align:center;color:var(--muted)">Sin resultados</td></tr>';
+}
+
+function graficoTendencia(t) {
+  new Chart(document.getElementById('chart-tendencia'), {
+    data: {
+      labels: t.map(function(x) { return x.mes; }),
+      datasets: [
+        { type: 'bar', label: 'Unidades', data: t.map(function(x) { return x.unidades; }), backgroundColor: '#b08d57aa', yAxisID: 'y' },
+        { type: 'line', label: 'Monto neto', data: t.map(function(x) { return x.monto; }), borderColor: '#3d7a4e', tension: .3, pointRadius: 0, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      plugins: { title: { display: true, text: 'Tendencia mensual' }, legend: { position: 'bottom' } },
+      scales: { y: { position: 'left' }, y2: { position: 'right', grid: { display: false }, ticks: { callback: function(v) { return fmtClp.format(v); } } } }
+    }
+  });
+}
+
+function graficoTop(top, meses) {
+  new Chart(document.getElementById('chart-top'), {
+    type: 'bar',
+    data: {
+      labels: top.map(function(x) { return x.sku; }),
+      datasets: [{ label: 'Unidades', data: top.map(function(x) { return x.unidades; }), backgroundColor: '#2b2620cc' }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { title: { display: true, text: 'Top ' + top.length + ' SKUs — últimos ' + meses + ' meses' }, legend: { display: false } },
+      scales: { y: { ticks: { font: { size: 10 } } } }
+    }
+  });
+}
+</script>
+</body>
+</html>
