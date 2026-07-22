@@ -36,7 +36,7 @@ los contenedores en tránsito.
 
 ## Impacto
 
-> ### ≈ CLP 100 millones en ventas recuperadas el primer año
+> ### ≈ USD 100k en ventas recuperadas el primer año
 > Facturación que, sin visibilidad anticipada de los quiebres, se habría perdido
 > por productos agotados en plena temporada. *(estimación interna)*
 
