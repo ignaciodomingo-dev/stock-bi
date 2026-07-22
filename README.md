@@ -27,7 +27,7 @@ alimentado por la API REST del ERP.
 ## El problema
 
 Una importadora con ~450 SKUs activos y lead times de **75–120 días** (según
-país de origen) enfrenta un dilema clásico: pedir de más inmoviliza capital;
+país de origen) enfrenta dilema que se genera al pedir de más, puesto que se inmoviliza capital;
 pedir de menos genera quiebres y **ventas perdidas** en plena temporada. La
 decisión se tomaba "a intuición", sin cruzar velocidad de venta con stock ni con
 los contenedores en tránsito.
@@ -112,8 +112,8 @@ flowchart LR
 
 ## Decisiones de arquitectura
 
-**¿Por qué Google Apps Script y no un backend "de verdad"?**
-El negocio ya vivía en Google Sheets y no había apetito por mantener servidores.
+**¿Por qué Google Apps Script y no un backend?**
+El negocio ya vivía en Google Sheets y no tenía sentido mantener servidores.
 Apps Script da automatización *serverless* gratis, pegada a la herramienta que el
 equipo ya usa. El costo: hay que diseñar **dentro de sus límites** (ejecuciones
 de máx. 6 min, cuotas de `UrlFetchApp`, tope de celdas por planilla). Buena parte
