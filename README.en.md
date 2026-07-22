@@ -35,7 +35,7 @@ stock or with the containers already in transit.
 
 ## Impact
 
-> ### ≈ CLP 100 million in recovered sales in the first year
+> ### ≈ USD 100K in recovered sales in the first year
 > Revenue that, without early visibility of stockouts, would have been lost to
 > products sold out in peak season. *(internal estimate)*
 
