@@ -1,5 +1,7 @@
 # Stock Intelligence — Prevención de quiebres sobre Google Apps Script
 
+**Español** · [English](README.en.md)
+
 ![Google Apps Script](https://img.shields.io/badge/Google%20Apps%20Script-4285F4?logo=google&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-V8-F7DF1E?logo=javascript&logoColor=black)
 ![Google Sheets](https://img.shields.io/badge/Google%20Sheets-0F9D58?logo=googlesheets&logoColor=white)
