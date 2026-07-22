@@ -1,0 +1,14 @@
+# Configuración local de asistentes/IDE — no versionar
+.claude/
+.DS_Store
+
+# Credenciales clasp (viven en ~/.clasprc.json, nunca aquí, pero por si acaso)
+.clasprc.json
+
+# Datos de negocio (marca, oficinas, orígenes, proveedores, categorías).
+# clasp SÍ lo sube a Apps Script; git NO. Plantilla: config_local.example.js
+apps_script/config_local.js
+
+# ID del proyecto Apps Script (identifica el Workspace real).
+# Plantilla: .clasp.json.example
+apps_script/.clasp.json
